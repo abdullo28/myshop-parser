@@ -3,6 +3,10 @@ from parser import search_texnomart
 
 app = Flask(__name__)
 
+@app.route("/")
+def index():
+    return "Приложение работает! Используй /parse-prices?query=название_товара"
+
 @app.route("/parse-prices")
 def parse_prices():
     query = request.args.get("query", "").strip().lower()
