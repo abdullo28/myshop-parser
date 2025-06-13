@@ -1,27 +1,26 @@
-import requests
+from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0"
-}
+def search_products(query: str):
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+        url = f"https://www.kattabozor.uz/search?query={query}"
+        page.goto(url, timeout=60000)
+        page.wait_for_timeout(5000)
+        html = page.content()
+        browser.close()
 
-def search_texnomart(query):
-    url = f"https://texnomart.uz/ru/search?q={query.replace(' ', '%20')}"
-    response = requests.get(url, headers=HEADERS, timeout=10)
-
-    soup = BeautifulSoup(response.text, "html.parser")
-    results = []
-
-    for item in soup.select(".products__item"):
-        title = item.select_one(".products__item__info-title")
-        price = item.select_one(".products__item-price-new")
-        link = item.select_one("a")
-
-        if title and price and link:
-            results.append({
-                "store": "Texnomart.uz",
-                "price": price.text.strip(),
-                "link": "https://texnomart.uz" + link["href"]
-            })
-
-    return results
+        soup = BeautifulSoup(html, "html.parser")
+        items = []
+        for item in soup.select("a.product-card__container"):
+            title = item.select_one(".product-card__title")
+            price = item.select_one(".product-card__price")
+            link = "https://www.kattabozor.uz" + item.get("href", "")
+            if title and price:
+                items.append({
+                    "title": title.text.strip(),
+                    "price": price.text.strip(),
+                    "link": link
+                })
+        return items
