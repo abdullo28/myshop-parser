@@ -1,23 +1,12 @@
-from flask import Flask, request
-from parser import search_texnomart
+from flask import Flask, request, jsonify
+from parser import search_products
 
 app = Flask(__name__)
 
-@app.route("/")
-def index():
-    return "Приложение работает! Используй /parse-prices?query=название_товара"
-
-@app.route("/parse-prices")
-def parse_prices():
-    query = request.args.get("query", "").strip().lower()
-    items = search_texnomart(query)
-
-    if not items:
-        return f"<b>Цены не найдены по запросу:</b> {query}"
-
-    html = f"<b>Результаты по запросу:</b> {query}<ul>"
-    for item in items:
-        html += f"<li><b>{item['store']}</b>: {item['price']} — <a href='{item['link']}' target='_blank'>Купить</a></li>"
-    html += "</ul>"
-
-    return html
+@app.route("/parse")
+def parse():
+    query = request.args.get("query", "")
+    if not query:
+        return jsonify({"error": "Query is empty"}), 400
+    results = search_products(query)
+    return jsonify(results)
